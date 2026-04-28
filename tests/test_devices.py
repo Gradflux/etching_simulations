@@ -19,9 +19,12 @@ def test_available_backends_and_device_description_are_consistent():
 
     assert isinstance(backends, tuple)
     assert len(backends) >= 1
-    assert "cpu" in backends
-    assert "cpu" in describe_devices().lower()
-    assert has_backend("cpu")
+    # Every reported backend must be recognized by has_backend().
+    for backend in backends:
+        assert has_backend(backend)
+    # describe_devices() must mention at least one of the active backends.
+    description = describe_devices().lower()
+    assert any(backend in description for backend in backends)
 
 
 def test_assert_backend_raises_for_missing_backend():

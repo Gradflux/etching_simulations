@@ -1,8 +1,11 @@
 """Shared typing aliases."""
 
-from typing import Sequence, Tuple
+from typing import Any, Sequence, Tuple
 
-from jax import Array
+try:
+	from jax import Array
+except ModuleNotFoundError:  # pragma: no cover - depends on optional runtime dependency
+	Array = Any
 
 Bounds = Tuple[Tuple[float, float], ...]
 Shape = Tuple[int, ...]

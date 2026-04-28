@@ -3,6 +3,7 @@ import numpy as np
 
 from jaxps.rays import (
     accumulate_flux,
+    accumulate_flux_auto,
     accumulate_flux_chunked,
     flux_to_deposition_rate,
     flux_to_etch_rate,
@@ -35,6 +36,19 @@ def test_symmetric_directions_give_symmetric_flux():
     flux = accumulate_flux(normals, directions)
 
     assert np.allclose(np.asarray(flux)[0, 0], np.asarray(flux)[0, 1])
+
+
+def test_accumulate_flux_backends_consistent():
+    normals = jnp.asarray([[[0.0, 1.0], [1.0, 0.0]], [[-1.0, 0.0], [0.0, -1.0]]])
+    directions = jnp.asarray([[0.0, 1.0], [1.0, 0.0], [-1.0, 0.0], [0.0, -1.0]])
+
+    grid_result = np.asarray(accumulate_flux_auto(normals, directions, backend="JAX_GRID"))
+    rays_result = np.asarray(accumulate_flux_auto(normals, directions, backend="JAX_RAYS"))
+
+    assert np.allclose(grid_result, rays_result, atol=1e-6), (
+        f"JAX_GRID and JAX_RAYS backends diverged: max diff "
+        f"{np.abs(grid_result - rays_result).max():.2e}"
+    )
 
 
 def test_chunked_flux_matches_unchunked_flux_for_small_ray_sets():

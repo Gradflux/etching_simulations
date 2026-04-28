@@ -37,6 +37,12 @@ Run all benchmarks:
 .venv/bin/python benchmarks/run_all.py --sizes 128 256 512 --repeat 5
 ```
 
+Run the full validation smoke, including examples and benchmark schema checks:
+
+```bash
+.venv/bin/python scripts/run_heavy_validation.py --all --output-dir /tmp/jaxps-validation
+```
+
 Require a backend for benchmark acceptance:
 
 ```bash
@@ -47,9 +53,23 @@ Require a backend for benchmark acceptance:
 When `--require-backend` is unavailable, the runner exits nonzero and reports
 the backends currently exposed by JAX.
 
+## Optional External OptiX
+
+`EXTERNAL_OPTIX` is a boundary for a future adapter, not a vendored backend.
+Detection looks for user-provided runtime hints such as `OPTIX_ROOT`, CUDA/NVIDIA
+driver visibility, and an optional future `jaxps_optix` extension. If the
+external environment is absent, backend selection falls back to implemented JAX
+paths.
+
+```bash
+OPTIX_ROOT=/path/to/external/optix .venv/bin/python -m pytest -q tests/test_optix_boundary.py
+```
+
 ## Current Optimization Choices
 
-- Derivative hot paths use fused one-sided derivative stacks for Godunov norms.
+- Derivative hot paths use fused one-sided and central-gradient derivative
+  stacks for Godunov norms, normals, and diagnostics.
+- Polynomial cosine yield uses a JAX `lax.scan` Horner evaluation.
 - Flux accumulation supports chunking to reduce peak exposure memory.
 - Dense masked narrow-band updates avoid changing far-away cells while keeping
   JAX array shapes static.

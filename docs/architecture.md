@@ -57,8 +57,9 @@ OptiX-like industrial ray tracer.
 
 `jaxps.rays.backends` provides high-level backend selection. `AUTO` resolves to
 an implemented JAX path and records the requested backend, actual backend, and
-visible JAX device platforms. `EXTERNAL_OPTIX` is reserved for a future optional
-backend and is not implemented or vendored.
+visible JAX device platforms. `EXTERNAL_OPTIX` is an external-only boundary: the
+project detects user-provided OptiX/CUDA runtime hints and otherwise falls back
+to implemented JAX backends. No NVIDIA SDK files are vendored.
 
 ## Post-MIT Clean-Room Feature Layer
 

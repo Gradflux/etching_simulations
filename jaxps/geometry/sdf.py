@@ -45,12 +45,11 @@ def sdf_plane(grid: Grid, point: tuple[float, ...], normal: tuple[float, ...]) -
     normal_norm = math.sqrt(sum(float(component) ** 2 for component in normal))
     if normal_norm == 0.0:
         raise ValueError("normal must be nonzero")
-    normal_arr = jnp.asarray(normal, dtype=jnp.result_type(*grid.coords))
-    unit = normal_arr / normal_norm
-    distance = jnp.zeros(grid.shape, dtype=unit.dtype)
-    for axis, coord in enumerate(grid.coords):
-        distance = distance + (coord - point[axis]) * unit[axis]
-    return distance
+    dtype = jnp.result_type(*grid.coords)
+    unit = jnp.asarray(normal, dtype=dtype) / normal_norm
+    point_arr = jnp.asarray(point, dtype=dtype)
+    coords = jnp.stack(grid.coords, axis=-1)
+    return jnp.sum((coords - point_arr) * unit, axis=-1)
 
 
 def sdf_box(grid: Grid, center: tuple[float, ...], half_extents: tuple[float, ...]) -> Array:

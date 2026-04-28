@@ -20,6 +20,7 @@ understanding. `jaxps` implementation code is written independently.
 - pybind11, BSD 3-Clause License, only if later used.
 - VTK, BSD 3-Clause License, only if later used.
 - Embree, Apache License 2.0, only if later used.
-- NVIDIA OptiX may be supported only as an optional external proprietary SDK in
-  the future. OptiX headers, samples, SDK files, binaries, and copied code are
-  not vendored in this project.
+- NVIDIA OptiX may be used only as an optional external proprietary SDK or via
+  NVIDIA's separately published header distribution. OptiX headers, samples, SDK
+  files, binaries, PTX, and copied code are not vendored in this project. See
+  `docs/optix_external.md`.

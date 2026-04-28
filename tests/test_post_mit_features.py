@@ -189,8 +189,9 @@ def test_flux_backend_selection_and_parameter_validation():
         normalize_flux_backend("unknown")
     with pytest.raises(ValueError):
         AdvectionParameters(cfl=0.0)
-    with pytest.raises(NotImplementedError):
-        select_flux_backend("EXTERNAL_OPTIX")
+    optix_selection = select_flux_backend("EXTERNAL_OPTIX")
+    assert optix_selection.actual_backend in {"EXTERNAL_OPTIX", "JAX_GRID", "JAX_RAYS"}
+    assert "external_optix_available" in optix_selection.to_dict()
 
 
 def test_plasma_fluorocarbon_and_multi_particle_models():

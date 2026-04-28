@@ -1,4 +1,4 @@
-"""Approximate flux accumulation from direction sets."""
+"""Approximate flux accumulation from direction sets and surface helpers."""
 
 from __future__ import annotations
 
@@ -89,3 +89,33 @@ def flux_to_etch_rate(flux: Array, yield_value: Array | float) -> Array:
     """Convert flux and yield to negative etch velocity."""
 
     return -jnp.asarray(flux) * yield_value
+
+
+def accumulate_flux_auto(
+    normals: Array,
+    directions: Array,
+    backend: str = "AUTO",
+    chunk_size: int = 64,
+    weights: Array | None = None,
+) -> Array:
+    """Dispatch flux accumulation to the backend resolved by ``select_flux_backend``.
+
+    ``JAX_RAYS`` uses chunked scan (``accumulate_flux_chunked``); all other
+    implemented backends use the dense einsum (``accumulate_flux``). ``AUTO``
+    selects ``JAX_RAYS`` when an accelerator device is visible.
+    """
+
+    from jaxps.rays.backends import select_flux_backend
+
+    selection = select_flux_backend(backend)
+    if selection.actual_backend == "JAX_RAYS":
+        return accumulate_flux_chunked(normals, directions, weights=weights, chunk_size=chunk_size)
+    return accumulate_flux(normals, directions, weights=weights)
+
+
+def approximate_surface_band(phi: Array, width: float) -> Array:
+    """Return cells within ``width`` of the zero level set."""
+
+    if width < 0.0:
+        raise ValueError("width must be nonnegative")
+    return jnp.abs(phi) <= float(width)

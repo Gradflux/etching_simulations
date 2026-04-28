@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 from jax import Array
@@ -21,10 +23,11 @@ def godunov_gradient_magnitude(
     phi: Array,
     velocity: Array | float,
     spacing: tuple[float, ...],
+    bcs: tuple[str, ...] = (),
 ) -> Array:
     """Return the Godunov upwind approximation to ``|grad phi|``."""
 
-    backward, forward = one_sided_derivatives(phi, spacing)
+    backward, forward = one_sided_derivatives(phi, spacing, bcs)
     return godunov_gradient_magnitude_from_derivatives(backward, forward, velocity)
 
 
@@ -43,15 +46,16 @@ def godunov_gradient_magnitude_from_derivatives(
     return jnp.where(jnp.asarray(velocity) >= 0.0, grad_for_positive_v, grad_for_negative_v)
 
 
-@jax.jit
+@partial(jax.jit, static_argnames=("bcs",))
 def _level_set_step_jit(
     phi: Array,
     velocity: Array | float,
     spacing: tuple[float, ...],
     dt: float,
     band_width: float,
+    bcs: tuple[str, ...] = (),
 ) -> Array:
-    godunov_norm = godunov_gradient_magnitude(phi, velocity, spacing)
+    godunov_norm = godunov_gradient_magnitude(phi, velocity, spacing, bcs)
     next_phi = phi - dt * velocity * godunov_norm
     return jnp.where(jnp.abs(phi) <= band_width, next_phi, phi)
 
@@ -62,6 +66,7 @@ def level_set_step(
     spacing: tuple[float, ...],
     dt: float,
     band_width: float | None = None,
+    bcs: tuple[str, ...] = (),
 ) -> Array:
     """Advance one explicit Euler step for ``phi_t + V |grad phi| = 0``."""
 
@@ -71,7 +76,7 @@ def level_set_step(
         raise ValueError("band_width must be nonnegative when provided")
     _min_spacing(spacing)
     update_width = jnp.inf if band_width is None else float(band_width)
-    return _level_set_step_jit(phi, velocity, spacing, dt, update_width)
+    return _level_set_step_jit(phi, velocity, spacing, dt, update_width, bcs)
 
 
 @jax.jit

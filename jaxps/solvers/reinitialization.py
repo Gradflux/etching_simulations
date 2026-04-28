@@ -32,6 +32,7 @@ def reinitialize_signed_distance(
     iterations: int = 50,
     cfl: float = 0.3,
     band_width: float | None = None,
+    bcs: tuple[str, ...] = (),
 ) -> Array:
     """Reinitialize ``phi`` toward a signed-distance field.
 
@@ -52,7 +53,7 @@ def reinitialize_signed_distance(
     band_mask = jnp.abs(phi0) <= update_width
 
     def scan_step(current_phi: Array, _index: Array) -> tuple[Array, Array]:
-        grad_norm = godunov_gradient_magnitude(current_phi, smoothed_sign, spacing)
+        grad_norm = godunov_gradient_magnitude(current_phi, smoothed_sign, spacing, bcs)
         next_phi = current_phi - dtau * smoothed_sign * (grad_norm - 1.0)
         next_phi = jnp.where(band_mask, next_phi, current_phi)
         return next_phi, next_phi
@@ -61,7 +62,12 @@ def reinitialize_signed_distance(
     return final_phi
 
 
+@jax.jit
+def _reinitialization_error_jit(phi: Array, spacing: tuple[float, ...]) -> Array:
+    return jnp.abs(gradient_magnitude(phi, spacing, eps=0.0) - 1.0)
+
+
 def reinitialization_error(phi: Array, spacing: tuple[float, ...]) -> Array:
     """Return ``abs(|grad phi| - 1)`` as a signed-distance diagnostic."""
 
-    return jnp.abs(gradient_magnitude(phi, spacing, eps=0.0) - 1.0)
+    return _reinitialization_error_jit(phi, spacing)

@@ -8,10 +8,11 @@ explicit level-set evolution, process-rate models, and approximate ray/flux
 models.
 
 The implementation does not include sparse HRLE-style data structures,
-industrial ray tracing, OptiX integration, or exact ViennaPS parity. It now
+industrial ray tracing, native OptiX tracing, or exact ViennaPS parity. It now
 includes a basic PDE reinitialization path, dense masked narrow-band updates,
-material-aware process models, and simple post-MIT public-behavior features
-implemented from clean-room specifications.
+material-aware process models, simple post-MIT public-behavior features, and an
+external-only OptiX detection boundary implemented from clean-room
+specifications.
 
 ## Clean-Room Rule
 

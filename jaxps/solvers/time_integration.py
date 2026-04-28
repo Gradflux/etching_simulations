@@ -34,6 +34,7 @@ def evolve_level_set(
     max_steps: int | None = None,
     return_trajectory: bool = False,
     band_width: float | None = None,
+    bcs: tuple[str, ...] = (),
 ) -> EvolutionResult:
     """Evolve ``phi0`` to ``t_final`` using fixed-step explicit Euler scans."""
 
@@ -57,7 +58,7 @@ def evolve_level_set(
     def scan_step(carry: tuple[Array, Array], _index: Array) -> tuple[tuple[Array, Array], Array]:
         phi, time = carry
         velocity = velocity_fn(phi, time)
-        next_phi = level_set_step(phi, velocity, spacing, dt, band_width=band_width)
+        next_phi = level_set_step(phi, velocity, spacing, dt, band_width=band_width, bcs=bcs)
         return (next_phi, time + dt), next_phi
 
     (phi_final, _), trajectory = jax.lax.scan(

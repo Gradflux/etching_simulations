@@ -30,6 +30,15 @@ copied, translated, or paraphrased. See `docs/license_audit.md`.
 ```bash
 cd etching_simulations
 python3 -m venv .venv
+.venv/bin/python -m pip install -U pip setuptools wheel
+.venv/bin/python -m pip install -e ".[test]"
+```
+
+If editable install fails with `Cannot import 'setuptools.build_meta'`, the
+virtual environment is missing build tooling. Re-run:
+
+```bash
+.venv/bin/python -m pip install -U setuptools wheel
 .venv/bin/python -m pip install -e ".[test]"
 ```
 
@@ -47,7 +56,7 @@ Heavy validation and benchmark runs:
 
 ```bash
 .venv/bin/python -m pytest -q -m slow
-.venv/bin/python scripts/run_heavy_validation.py
+.venv/bin/python scripts/run_heavy_validation.py --all --output-dir /tmp/jaxps-validation
 .venv/bin/python benchmarks/run_all.py --sizes 128 256 512 --repeat 5
 ```
 
@@ -81,7 +90,7 @@ jaxps/models/      Etch, deposition, angular yield, plasma, fluorocarbon,
 jaxps/rays/        Direction sampling, exposure flux, visibility approximation,
                   and backend selection
 jaxps/materials/   Built-ins, immutable materials, registries, value maps
-jaxps/io/          Array I/O, simulation/domain serialization, VTK placeholder
+jaxps/io/          Array I/O, simulation/domain serialization, legacy VTK scalar output
 jaxps/utils/       Device reporting, parameter dataclasses, shared typing
 tests/             Unit tests and analytic validation cases
 examples/          Runnable process examples
@@ -115,6 +124,7 @@ Further reading:
 - `docs/examples.md`
 - `docs/performance.md`
 - `docs/mps_metal.md`
+- `docs/optix_external.md`
 - `docs/after_mit_license_changes.md`
 - `docs/post_mit_feature_spec.md`
 
@@ -137,13 +147,44 @@ environment:
 .venv-metal/bin/python benchmarks/run_all.py --sizes 128 256 --repeat 5 --require-backend metal
 ```
 
-## Current Limitations
+Optional external OptiX detection never vendors NVIDIA files:
 
-- Dense Cartesian grids only. A dense masked narrow band is available; sparse
-  HRLE-style storage is not.
-- Ray/flux modeling is an approximate JAX-native model, not industrial ray
-  tracing and not OptiX parity.
-- Reinitialization is a first PDE implementation and is validated near smooth
-  interfaces, but it is not a full production redistancing package.
-- VTK output remains a placeholder; use `.npz` output for now.
-- GPU acceleration depends on the installed JAX backend and available hardware.
+```bash
+OPTIX_ROOT=/path/to/external/optix .venv/bin/python -m pytest -q tests/test_optix_boundary.py
+```
+
+## Validation Matrix
+
+| Check | Command | Required for baseline |
+|---|---|---|
+| Editable install | `.venv/bin/python -m pip install -e ".[test]"` | Yes |
+| Unit and analytic validation | `.venv/bin/python -m pytest -q` | Yes |
+| Heavy CPU validation | `.venv/bin/python -m pytest -q -m slow` | Yes |
+| Full integration smoke | `.venv/bin/python scripts/run_heavy_validation.py --all --output-dir /tmp/jaxps-validation` | Yes |
+| Benchmarks | `.venv/bin/python benchmarks/run_all.py --sizes 64 128 256 --repeat 3` | Yes |
+| Apple Metal/MPS | `.venv-metal/bin/python -m pytest -q -m mps` | Optional |
+| External OptiX boundary | `OPTIX_ROOT=/path/to/optix .venv/bin/python -m pytest -q tests/test_optix_boundary.py` | Optional |
+
+## Current Status
+
+- Dense Cartesian grids support 2D/3D level-set evolution with dense
+  narrow-band masking.
+- Reinitialization uses a validated PDE-based redistancing pass near smooth
+  interfaces.
+- Ray/flux modeling includes JAX exposure, chunked accumulation, grid-marched
+  visibility approximation, and an external-only OptiX backend boundary.
+- VTK legacy structured-point output is available for scalar level-set fields;
+  `.npz`/simulation serialization remains the metadata-preserving format.
+- JAX kernels use `jit`, `vmap`, and `lax.scan` in the derivative, solver,
+  ray/flux, reinitialization, and benchmark paths.
+- GPU acceleration is automatic only when the installed JAX backend exposes a
+  non-CPU device.
+
+## Next Iteration Targets
+
+- Add sparse HRLE-style storage or a real sparse narrow-band data structure.
+- Build a native optional OptiX adapter against user-installed OptiX/CUDA
+  without vendoring NVIDIA files.
+- Add calibrated plasma chemistry and stronger 3D process validation.
+- Improve production redistancing and mesh export beyond simple VTK scalar
+  fields.

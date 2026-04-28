@@ -10,7 +10,18 @@ import platform
 import subprocess
 import sys
 
-import jax
+
+def _import_jax():
+    """Import jax lazily so hardware-only checks can run without jax installed."""
+
+    try:
+        import jax  # type: ignore
+    except ModuleNotFoundError as exc:  # pragma: no cover - environment dependent
+        raise RuntimeError(
+            "jax is not installed in this environment. Install project dependencies first, "
+            "for example: python -m pip install -e '.[test]'"
+        ) from exc
+    return jax
 
 
 def _normalize_backend(name: str) -> str:
@@ -25,6 +36,7 @@ def _normalize_backend(name: str) -> str:
 def available_backends() -> tuple[str, ...]:
     """Return normalized backend/platform names exposed by JAX devices."""
 
+    jax = _import_jax()
     backends = {_normalize_backend(str(device.platform)) for device in jax.devices()}
     return tuple(sorted(backends))
 
@@ -84,6 +96,7 @@ def has_mps_hardware() -> bool:
 def mps_status() -> dict[str, object]:
     """Return hardware and JAX-backend status for Apple Metal/MPS usage."""
 
+    jax = _import_jax()
     return {
         "hardware_mps_present": has_mps_hardware(),
         "jax_metal_plugin_installed": jax_metal_plugin_installed(),
@@ -128,10 +141,26 @@ print(json.dumps({
         "ok": completed.returncode == 0,
     }
     if completed.returncode == 0:
+        payload = None
         try:
-            result.update(json.loads(completed.stdout))
+            payload = json.loads(completed.stdout)
         except json.JSONDecodeError:
+            # Some backends (notably jax-metal) print informational lines to
+            # stdout before/after the JSON payload. Recover by parsing a JSON
+            # object from one of the output lines.
+            for line in completed.stdout.splitlines():
+                candidate = line.strip()
+                if not (candidate.startswith("{") and candidate.endswith("}")):
+                    continue
+                try:
+                    payload = json.loads(candidate)
+                    break
+                except json.JSONDecodeError:
+                    continue
+        if payload is None:
             result["parse_error"] = "could not parse JAX probe JSON"
+        else:
+            result.update(payload)
     return result
 
 
@@ -168,6 +197,7 @@ def assert_backend(name: str) -> None:
 def describe_devices() -> str:
     """Return a compact description of available JAX devices."""
 
+    jax = _import_jax()
     devices = jax.devices()
     if not devices:
         return "No JAX devices available."
@@ -177,6 +207,7 @@ def describe_devices() -> str:
 def device_report() -> dict[str, object]:
     """Return structured JAX device and backend metadata."""
 
+    jax = _import_jax()
     devices = jax.devices()
     backends = available_backends()
     return {

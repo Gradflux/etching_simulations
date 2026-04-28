@@ -22,6 +22,10 @@ test = [
   "numpy",
   "pytest",
 ]
+build = [
+  "setuptools>=68",
+  "wheel",
+]
 plot = [
   "matplotlib",
 ]
@@ -32,6 +36,8 @@ dev = [
   "numpy",
   "pytest",
   "ruff",
+  "setuptools>=68",
+  "wheel",
 ]
 
 [tool.setuptools.packages.find]

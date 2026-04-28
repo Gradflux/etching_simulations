@@ -1,7 +1,15 @@
 import numpy as np
+import jax
 import jax.numpy as jnp
+import pytest
 
 from jaxps.experimental import periodic_spectral_derivative, periodic_spectral_laplacian
+
+# Metal does not support complex-number FFT operations at the hardware level.
+pytestmark = pytest.mark.skipif(
+    jax.default_backend().lower() == "metal",
+    reason="Metal backend does not support complex FFT",
+)
 
 
 def test_periodic_spectral_derivative_matches_smooth_periodic_function():

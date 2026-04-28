@@ -47,7 +47,7 @@ process-simulation knowledge:
 | Material value maps | `jaxps/materials/value_map.py` | Explicit mapping from material ID arrays to scalar/vector JAX fields |
 | Hull/surface extraction | `jaxps/geometry/mesh.py` | Independent marching-squares-style 2D contours and 3D sign-change point clouds |
 | Extrusion and slicing utilities | `jaxps/geometry/extrude.py`, `slice.py` | Direct Cartesian array construction and indexing |
-| Modular flux backend selection | `jaxps/rays/backends.py` | High-level backend names resolved to implemented JAX paths; OptiX reserved only |
+| Modular flux backend selection | `jaxps/rays/backends.py` | High-level backend names resolved to implemented JAX paths; OptiX is external-only and never vendored |
 | Multi-particle process workflow | `jaxps/models/multi_particle.py` | Additive species rates with explicit signs, optional angular yields, and material response |
 | Plasma and fluorocarbon-style models | `jaxps/models/plasma.py`, `fluorocarbon.py` | Transparent simplified formulas from general plasma-etch physics |
 | Domain setup serialization | `jaxps/io/serialization.py` | JSON-compatible dimension, bounds, shape, spacing, and boundary metadata |

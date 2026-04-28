@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -49,22 +50,60 @@ def main() -> None:
     commands.append([sys.executable, str(root / "bench_ray_sampling.py"), "--num-rays", "100000"])
 
     results = []
+    child_env = os.environ.copy()
+    metal_requested = requested_backend in ("metal", "mps")
+    if metal_requested:
+        child_env.setdefault("ENABLE_PJRT_COMPATIBILITY", "1")
+
     for command in commands:
-        completed = subprocess.run(
-            command
-            + [
-                "--repeat",
-                str(args.repeat),
-                "--format",
-                "json",
-                "--requested-backend",
-                requested_backend,
-            ],
-            check=True,
-            text=True,
-            capture_output=True,
+        full_command = command + [
+            "--repeat",
+            str(args.repeat),
+            "--format",
+            "json",
+            "--requested-backend",
+            requested_backend,
+        ]
+        attempts = 2 if metal_requested else 1
+        completed = None
+        last_error = None
+        for attempt in range(1, attempts + 1):
+            try:
+                completed = subprocess.run(
+                    full_command,
+                    check=True,
+                    text=True,
+                    capture_output=True,
+                    env=child_env,
+                )
+                break
+            except subprocess.CalledProcessError as exc:
+                last_error = exc
+                if attempt < attempts:
+                    continue
+                stdout = (exc.stdout or "").strip()
+                stderr = (exc.stderr or "").strip()
+                print(
+                    "benchmark subprocess failed:\n"
+                    f"  command: {' '.join(full_command)}\n"
+                    f"  exit_code: {exc.returncode}\n"
+                    f"  stdout:\n{stdout or '<empty>'}\n"
+                    f"  stderr:\n{stderr or '<empty>'}",
+                    file=sys.stderr,
+                )
+                raise
+        if completed is None and last_error is not None:
+            raise last_error
+        # Metal driver prints device info lines directly to stdout; extract only the JSON line.
+        json_line = next(
+            (line for line in completed.stdout.splitlines() if line.startswith("{")),
+            None,
         )
-        results.append(json.loads(completed.stdout))
+        if json_line is None:
+            raise ValueError(
+                f"no JSON found in subprocess stdout for {' '.join(full_command)}:\n{completed.stdout!r}"
+            )
+        results.append(json.loads(json_line))
 
     text = json.dumps(results, indent=2, sort_keys=True)
     if args.output is None:

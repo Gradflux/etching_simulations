@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
+import jax
 import jax.numpy as jnp
 from jax import Array
 
@@ -39,15 +40,20 @@ def incidence_cosine(direction: Array, normals: Array) -> Array:
     return jnp.maximum(-jnp.sum(normals_arr * direction_arr, axis=-1), 0.0)
 
 
+@jax.jit
+def _polynomial_cosine_yield_jit(mu: Array, coeffs: Array, clamp_flag: Array) -> Array:
+    mu_arr = jnp.asarray(mu, dtype=coeffs.dtype)
+    # coeffs[i] is the coefficient for mu^i (ascending order).
+    # jnp.polyval expects descending order, so reverse before passing.
+    result = jnp.polyval(coeffs[::-1], mu_arr)
+    return jnp.where(clamp_flag, jnp.maximum(result, 0.0), result)
+
+
 def polynomial_cosine_yield(mu: Array, coefficients: Sequence[float] | Array, clamp: bool = True) -> Array:
     """Evaluate ``sum_i coefficients[i] * mu**i``."""
 
     coeffs = jnp.asarray(coefficients)
-    mu_arr = jnp.asarray(mu, dtype=coeffs.dtype)
-    result = jnp.zeros_like(mu_arr, dtype=coeffs.dtype)
-    for coefficient in coeffs[::-1]:
-        result = result * mu_arr + coefficient
-    return jnp.maximum(result, 0.0) if clamp else result
+    return _polynomial_cosine_yield_jit(mu, coeffs, jnp.asarray(clamp))
 
 
 @dataclass(frozen=True)

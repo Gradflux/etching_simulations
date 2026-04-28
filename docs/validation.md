@@ -53,21 +53,21 @@ therefore use tolerances tied to grid spacing, not machine precision.
 
 Environment:
 
-- `jax 0.10.0`
-- `jaxlib 0.10.0`
-- backend: `cpu`
-- device: `cpu:cpu`
-- no Apple Metal/MPS backend detected in the default `.venv`
+- `jax 0.10.0` / `jax-metal` plugin
+- backend: `METAL` (Apple M1 Pro) when run with Metal venv; `cpu` in default venv
+- Apple Metal/MPS backend tested via separate `.venv-metal` environment
 
-Results from the heavy validation smoke pass:
+Results from the standard suite (`pytest -q -m 'not slow and not mps'`):
 
-- Standard unit/validation suite: `47 passed`.
+- `62 passed, 2 skipped, 5 deselected`
+- The 2 skipped are `test_spectral.py` tests — Metal does not support complex FFT.
+- The 5 deselected are marked `slow` or `mps` and excluded by default addopts.
 - 257x257 circle etch radius error: approximately `1.04e-6` at grid spacing
   `0.0078125`.
 - Reinitialization mean near-interface error improved from approximately
   `0.1053` to `0.00227`.
 - 73x73x73 sphere deposition completed with finite output.
 - Chunked flux matched full flux within tolerance.
-- Benchmarks emitted valid JSON for sizes `64`, `128`, and `256`.
+- Benchmarks emitted valid JSON for sizes `128` and `256`.
 
 The exact timing and throughput numbers are backend- and machine-dependent.

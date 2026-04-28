@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+import jax
 import jax.numpy as jnp
 from jax import Array
 
@@ -18,6 +19,7 @@ from jaxps.models.yield_models import PolynomialCosineYield
 SpeciesKind = Literal["etch", "deposition"]
 
 
+@jax.jit
 def combine_species_rates(species_rates: Array) -> Array:
     """Sum per-species velocity contributions along the first axis."""
 
@@ -27,6 +29,7 @@ def combine_species_rates(species_rates: Array) -> Array:
     return jnp.sum(rates, axis=0)
 
 
+@jax.jit
 def linear_species_rate(flux: Array, coefficient: Array | float, sign: Array | float) -> Array:
     """Return a signed linear species velocity contribution."""
 

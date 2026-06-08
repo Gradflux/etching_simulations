@@ -27,26 +27,32 @@ copied, translated, or paraphrased. See `docs/license_audit.md`.
 
 ## Installation
 
+Use a standard Python `venv` with Python 3.10 or newer:
+
 ```bash
 cd etching_simulations
+python3 --version
 python3 -m venv .venv
-.venv/bin/python -m pip install -U pip setuptools wheel
-.venv/bin/python -m pip install -e ".[test]"
+. .venv/bin/activate
+python -m pip install -U pip setuptools wheel
+python -m pip install -r requirements.txt
 ```
 
-If editable install fails with `Cannot import 'setuptools.build_meta'`, the
-virtual environment is missing build tooling. Re-run:
+If `python3 --version` reports a version older than 3.10, install or select a
+newer standard Python first, then recreate the virtual environment. If editable
+install fails with `Cannot import 'setuptools.build_meta'`, the virtual
+environment is missing build tooling. Re-run:
 
 ```bash
-.venv/bin/python -m pip install -U setuptools wheel
-.venv/bin/python -m pip install -e ".[test]"
+python -m pip install -U setuptools wheel
+python -m pip install -r requirements.txt
 ```
 
 ## Tests
 
 ```bash
 cd etching_simulations
-.venv/bin/python -m pytest -q
+python -m pytest -q
 ```
 
 The validation tests check that the documented sign convention is respected:
@@ -66,8 +72,16 @@ Examples run on CPU by default and use a GPU automatically when the installed
 JAX backend exposes one:
 
 ```bash
-python3 examples/isotropic_etch_2d.py
+python examples/isotropic_etch_2d.py
+python examples/sf6_sinusoid_etch_2d.py \
+  --ppa-etch-rate-nm-per-min 40 \
+  --si-etch-rate-nm-per-min 30
 ```
+
+When the virtual environment is active, use `python` or `.venv/bin/python`.
+Running a script with an absolute interpreter path such as
+`/opt/homebrew/bin/python3 examples/sf6_sinusoid_etch_2d.py` bypasses `.venv`
+and may fail with `ModuleNotFoundError: No module named 'jax'`.
 
 Each example writes arrays to `outputs/`. If `matplotlib` is installed, simple
 plots are saved as well.

@@ -14,6 +14,7 @@ EXAMPLES = {
     "isotropic_etch_2d.py": "shrink",
     "isotropic_deposition_2d.py": "grow",
     "masked_trench_etch_2d.py": "shrink",
+    "sf6_sinusoid_etch_2d.py": "shrink",
     "directional_etch_2d.py": "shrink",
     "directional_etch_3d.py": "shrink",
     "flux_deposition_2d.py": "grow",

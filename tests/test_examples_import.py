@@ -9,6 +9,7 @@ def test_examples_import_without_running_main():
         "examples.isotropic_etch_2d",
         "examples.isotropic_deposition_2d",
         "examples.masked_trench_etch_2d",
+        "examples.sf6_sinusoid_etch_2d",
         "examples.directional_etch_2d",
         "examples.directional_etch_3d",
         "examples.flux_deposition_2d",
